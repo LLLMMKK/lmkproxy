@@ -4,75 +4,10 @@ import (
 	"bufio"
 	"core/core"
 	"fmt"
-	"io"
 	"net"
 	"net/url"
 	"strings"
 )
-
-func decodeRead(conn net.Conn, depwd core.Password) (int, []byte, error) {
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	core.Decode(depwd, buf)
-	return n, buf, err
-}
-
-func encodeRead(conn net.Conn, enpwd core.Password) (int, []byte, error) {
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	core.Encode(enpwd, buf)
-	return n, buf, err
-}
-
-func encodeWrite(conn net.Conn, enpwd core.Password, buf []byte) (int, error) {
-	core.Encode(enpwd, buf)
-	n, err := conn.Write(buf)
-	return n, err
-}
-
-// func decodeWrite(conn net.Conn, depwd core.Password, buf []byte) (int, error) {
-// 	core.Decode(depwd, buf)
-// 	n, err := conn.Write(buf)
-// 	return n, err
-// }
-
-func decodeCopy(dst net.Conn, src net.Conn, depwd core.Password) error {
-	for {
-		n, buf, err := decodeRead(src, depwd)
-		if err != nil {
-			if err != io.EOF {
-				return err
-			}
-			return nil
-		}
-		if n > 0 {
-			_, err = dst.Write(buf[:n])
-			if err != nil {
-				return err
-			}
-		}
-	}
-}
-
-func encodeCopy(dst net.Conn, src net.Conn, enpwd core.Password) error {
-
-	for {
-
-		n, buf, err := encodeRead(src, enpwd)
-		if err != nil {
-			if err != io.EOF {
-				return err
-			}
-			return nil
-		}
-		if n > 0 {
-			_, err = dst.Write(buf[:n])
-			if err != nil {
-				return err
-			}
-		}
-	}
-}
 
 func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 	defer conn.Close()
@@ -85,9 +20,9 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 
 	fmt.Println("Connected to proxy server")
 	fmt.Println("QWQ")
-	encodeWrite(proxyServer, enpwd, []byte{0x05, 0x01, 0x00})
+	core.EncodeWrite(proxyServer, enpwd, []byte{0x05, 0x01, 0x00})
 
-	_, buf, err := decodeRead(proxyServer, depwd)
+	_, buf, err := core.DecodeRead(proxyServer, depwd)
 
 	if err != nil || buf[0] != 0x05 || buf[1] != 0x00 {
 		return
@@ -144,9 +79,9 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 
 	fmt.Println(buf)
 
-	encodeWrite(proxyServer, enpwd, buf)
+	core.EncodeWrite(proxyServer, enpwd, buf)
 
-	_, buf, err = decodeRead(proxyServer, depwd)
+	_, buf, err = core.DecodeRead(proxyServer, depwd)
 	if err != nil || buf[0] != 0x05 || buf[1] != 0x00 {
 		return
 	}
@@ -154,14 +89,14 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 	defer proxyServer.Close()
 
 	go func() {
-		err := encodeCopy(proxyServer, conn, enpwd)
+		err := core.EncodeCopy(proxyServer, conn, enpwd)
 		if err != nil {
 			fmt.Println(err)
 			conn.Close()
 			proxyServer.Close()
 		}
 	}()
-	decodeCopy(conn, proxyServer, depwd)
+	core.DecodeCopy(conn, proxyServer, depwd)
 }
 
 func main() {
