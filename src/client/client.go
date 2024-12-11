@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"core/core"
 	"fmt"
 	"io"
 	"net"
+	"net/url"
+	"strings"
 )
 
 func decodeRead(conn net.Conn, depwd core.Password) (int, []byte, error) {
@@ -80,8 +83,8 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 		return
 	}
 
-	println("Connected to proxy server")
-
+	fmt.Println("Connected to proxy server")
+	fmt.Println("QWQ")
 	encodeWrite(proxyServer, enpwd, []byte{0x05, 0x01, 0x00})
 
 	_, buf, err := decodeRead(proxyServer, depwd)
@@ -90,31 +93,54 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 		return
 	}
 
-	// request := make([]byte, 1024)
-	// n, err := conn.Read(request)
+	reader := bufio.NewReader(conn)
+	line, err := reader.ReadString('\n')
 
-	remoteAddr := conn.RemoteAddr()
-	tcpAddr, ok := remoteAddr.(*net.TCPAddr)
-	if !ok {
-		fmt.Println("RemoteAddr is not a TCPAddr")
+	if err != nil {
+		fmt.Println("Error reading")
 		return
 	}
-	addrType := "IPv4"
-	if tcpAddr.IP.To4() == nil {
-		addrType = "IPv6"
+
+	parts := strings.Split(line, " ")
+
+	fmt.Println(parts)
+
+	if parts[0] == "CONNECT" {
+		return
+	} else {
+
 	}
-	ip := tcpAddr.IP
-	port := tcpAddr.Port
-	buf = []byte{0x05, 0x00, 0x00}
+
+	host := net.ParseIP(parts[1])
+	addrType := "ipv4"
+	if host != nil {
+		if host.To4() == nil {
+			addrType = "ipv6"
+		}
+	} else {
+		addrType = "Domain name"
+	}
+
+	buf = []byte{0x05, 0x01, 0x00}
 	switch addrType {
 	case "IPv4":
 		buf = append(buf, 0x01)
-		buf = append(buf, ip.To4()...)
+		buf = append(buf, host.To4()...)
 	case "IPv6":
 		buf = append(buf, 0x04)
-		buf = append(buf, ip.To16()...)
+		buf = append(buf, host.To16()...)
+	case "Domain name":
+		buf = append(buf, 0x03)
+		u, err := url.Parse(parts[1])
+		if err != nil {
+			return
+		}
+		u.Hostname()
+		buf = append(buf, byte(len(u.Hostname())))
+		buf = append(buf, []byte(u.Hostname())...)
 	}
-	buf = append(buf, byte(port>>8), byte(port&0xff))
+
+	buf = append(buf, byte(80>>8), byte(80&0xff))
 
 	fmt.Println(buf)
 

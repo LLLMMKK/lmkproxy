@@ -78,7 +78,7 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 
 	n, buf, err := decodeRead(conn, depwd)
 
-	fmt.Println(buf)
+	//fmt.Println(buf)
 
 	if err != nil || n < 3 || buf[0] != 0x05 {
 		return
@@ -109,6 +109,9 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 	default:
 		return
 	}
+
+	fmt.Println("Step2Over")
+
 	dPort := buf[n-2 : n]
 	dstAddr := &net.TCPAddr{
 		IP:   dIP,
@@ -125,6 +128,8 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 		encodeWrite(conn, enpwd, []byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 	}
 
+	fmt.Println(dstAddr)
+
 	fmt.Println("Connected to dst server")
 	//建立连接成功
 
@@ -136,16 +141,6 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 		}
 	}()
 	encodeCopy(conn, dstServer, enpwd)
-	// go func() {
-	//     err := lsServer.DecodeCopy(dstServer, localConn)
-	//     if err != nil {
-	//         // 在 copy 的过程中可能会存在网络超时等 error 被 return，只要有一个发生了错误就退出本次工作
-	//         localConn.Close()
-	//         dstServer.Close()
-	//     }
-	// }()
-	// // 从 dstServer 读取数据发送到 localUser，这里因为处在翻墙阶段出现网络错误的概率更大
-	// lsServer.EncodeCopy(localConn, dstServer)
 }
 func main() {
 	decodePassword := core.Password{225, 96, 201, 157, 48, 11, 5, 142, 177, 195, 163, 125, 13, 147, 164, 174, 114, 221, 243, 180, 58, 17, 224, 134, 9, 220, 138, 118, 102, 170, 169, 23, 94, 202, 240, 8, 254, 219, 146, 188, 176, 222, 44, 227, 20, 90, 145, 2, 204, 0, 250, 76, 179, 162, 140, 119, 156, 211, 245, 139, 238, 223, 3, 235, 203, 81, 130, 100, 208, 104, 25, 193, 53, 84, 77, 62, 131, 117, 63, 98, 161, 168, 173, 107, 214, 200, 38, 194, 228, 253, 7, 186, 95, 1, 207, 86, 83, 135, 115, 175, 40, 165, 217, 185, 99, 178, 21, 6, 18, 237, 97, 159, 27, 24, 45, 206, 46, 59, 43, 73, 196, 42, 184, 141, 148, 158, 50, 229, 189, 68, 89, 215, 87, 39, 121, 255, 49, 88, 160, 209, 127, 108, 72, 187, 16, 144, 80, 128, 212, 111, 137, 216, 47, 74, 67, 242, 116, 126, 199, 246, 92, 183, 239, 30, 154, 19, 4, 70, 82, 181, 236, 244, 56, 249, 233, 54, 232, 101, 136, 226, 248, 182, 166, 85, 103, 57, 79, 71, 149, 155, 35, 28, 120, 106, 109, 60, 36, 66, 241, 151, 91, 10, 12, 122, 124, 14, 143, 234, 231, 123, 26, 191, 78, 32, 31, 15, 112, 22, 133, 192, 75, 55, 150, 247, 93, 210, 171, 61, 34, 152, 129, 190, 113, 153, 33, 51, 205, 52, 167, 213, 197, 230, 198, 132, 29, 251, 41, 105, 252, 218, 64, 65, 69, 37, 110, 172}
