@@ -3,7 +3,6 @@ package main
 import (
 	"core/core"
 	"fmt"
-	"io"
 	"net"
 )
 
@@ -36,7 +35,11 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 	case 0x01:
 		dIP = buf[4 : 4+net.IPv4len]
 	case 0x03:
-		ipAddr, _ := net.ResolveIPAddr("ip", string(buf[5:n-2]))
+		ipAddr, err := net.ResolveIPAddr("ip", string(buf[5:n-2]))
+		if err != nil {
+			fmt.Println("Error resolving domain name: ", err)
+			return
+		}
 		dIP = ipAddr.IP
 	case 0x04:
 		dIP = buf[4 : 4+net.IPv6len]
@@ -66,17 +69,17 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 	fmt.Println("Connected to dst server")
 	//建立连接成功
 
-	go io.Copy(dstServer, conn)
-	io.Copy(conn, dstServer)
+	// go io.Copy(dstServer, conn)
+	// io.Copy(conn, dstServer)
 
-	// go func() {
-	// 	err = core.DecodeCopy(dstServer, conn, depwd)
-	// 	if err != nil {
-	// 		conn.Close()
-	// 		dstServer.Close()
-	// 	}
-	// }()
-	// core.EncodeCopy(conn, dstServer, enpwd)
+	go func() {
+		err = core.DecodeCopy(dstServer, conn, depwd)
+		if err != nil {
+			conn.Close()
+			dstServer.Close()
+		}
+	}()
+	core.EncodeCopy(conn, dstServer, enpwd)
 }
 func main() {
 	decodePassword := core.DecodePassword

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"core/core"
 	"fmt"
-	"io"
 	"net"
 	"net/url"
 	"strings"
@@ -106,17 +105,25 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 
 	defer proxyServer.Close()
 	fmt.Println("Start")
-	// go func() {
-	// 	err := core.EncodeCopy(proxyServer, conn, enpwd)
-	// 	if err != nil {
-	// 		fmt.Println("Error in EncodeCopy: ", err)
-	// 		conn.Close()
-	// 		proxyServer.Close()
-	// 	}
-	// }()
-	// core.DecodeCopy(conn, proxyServer, depwd)
-	go io.Copy(proxyServer, conn)
-	io.Copy(conn, proxyServer)
+	go func() {
+		err := core.EncodeCopy(proxyServer, conn, enpwd)
+		if err != nil {
+			fmt.Println("Error in EncodeCopy: ", err)
+			conn.Close()
+			proxyServer.Close()
+		}
+	}()
+	core.DecodeCopy(conn, proxyServer, depwd)
+
+	// tmpProxy, err := net.Dial("tcp", "220.181.38.150:80")
+	// if err != nil {
+	// 	fmt.Println("Error in tmpProxy: ", err)
+	// 	return
+	// }
+	// go io.Copy(tmpProxy, conn)
+	// io.Copy(conn, tmpProxy)
+	// go io.Copy(proxyServer, conn)
+	// io.Copy(conn, proxyServer)
 }
 
 func main() {
