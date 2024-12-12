@@ -6,14 +6,14 @@ import (
 )
 
 func DecodeRead(conn net.Conn, depwd Password) (int, []byte, error) {
-	buf := make([]byte, 1024)
+	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
 	Decode(depwd, buf)
 	return n, buf, err
 }
 
 func EncodeRead(conn net.Conn, enpwd Password) (int, []byte, error) {
-	buf := make([]byte, 1024)
+	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
 	Encode(enpwd, buf)
 	return n, buf, err
@@ -46,7 +46,6 @@ func DecodeCopy(dst net.Conn, src net.Conn, depwd Password) error {
 func EncodeCopy(dst net.Conn, src net.Conn, enpwd Password) error {
 
 	for {
-
 		n, buf, err := EncodeRead(src, enpwd)
 		if err != nil {
 			if err != io.EOF {
