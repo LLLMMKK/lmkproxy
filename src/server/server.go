@@ -57,6 +57,7 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 
 	dstServer, err := net.Dial("tcp", dstAddr.String())
 	if err != nil {
+		fmt.Println("Error connecting to destination server: ", err)
 		return
 	} else {
 		defer dstServer.Close()
@@ -75,6 +76,7 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 	go func() {
 		err = core.DecodeCopy(dstServer, conn, depwd)
 		if err != nil {
+			fmt.Println("Error in DecodeCopy: ", err)
 			conn.Close()
 			dstServer.Close()
 		}
@@ -84,13 +86,13 @@ func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 func main() {
 	decodePassword := core.DecodePassword
 	encodePassword := core.EncodePassword
-	listen, err := net.Listen("tcp", ":8080")
+	listen, err := net.Listen("tcp", ":7879")
 
 	if err != nil {
 		return
 	}
 
-	fmt.Println("Server is running on 8080")
+	fmt.Println("Server is running on 7879")
 
 	for {
 		conn, _ := listen.Accept()

@@ -12,9 +12,10 @@ import (
 func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
 	defer conn.Close()
 
-	proxyServer, err := net.Dial("tcp", "127.0.0.1:8080")
+	proxyServer, err := net.Dial("tcp", "47.83.209.127:7879")
 
 	if err != nil {
+		fmt.Println("Error connecting to proxy server: ", err)
 		return
 	}
 
