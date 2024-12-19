@@ -171,7 +171,7 @@ func main() {
 
 	fmt.Println("Client is running on 7878")
 
-	vpsAddress, vpsPort, err := readConfig("config.txt")
+	vpsAddress, vpsPort, err := readConfig("../../config/config.txt")
 	if err != nil {
 		fmt.Println("Error reading config file: ", err)
 		return
