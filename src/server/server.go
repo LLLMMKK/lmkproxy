@@ -1,7 +1,7 @@
 package main
 
 import (
-	"core/core"
+	"core/internal/core"
 	"fmt"
 	"net"
 )

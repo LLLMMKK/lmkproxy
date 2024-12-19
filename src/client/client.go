@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"core/core"
+	"core/internal/core"
 	"fmt"
 	"net"
 	"net/url"
