@@ -6,13 +6,46 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 )
 
-func process(conn net.Conn, depwd core.Password, enpwd core.Password) {
+func readConfig(filePath string) (string, string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", "", err
+	}
+	defer file.Close()
+
+	var address, port string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, "=")
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+		switch key {
+		case "vps_address":
+			address = value
+		case "vps_port":
+			port = value
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", "", err
+	}
+
+	return address, port, nil
+}
+
+func process(conn net.Conn, depwd core.Password, enpwd core.Password, vpsAddr string) {
 	defer conn.Close()
 
-	proxyServer, err := net.Dial("tcp", "47.83.209.127:7879")
+	proxyServer, err := net.Dial("tcp", vpsAddr)
 
 	if err != nil {
 		fmt.Println("Error connecting to proxy server: ", err)
@@ -138,6 +171,12 @@ func main() {
 
 	fmt.Println("Client is running on 7878")
 
+	vpsAddress, vpsPort, err := readConfig("config.txt")
+	if err != nil {
+		fmt.Println("Error reading config file: ", err)
+		return
+	}
+
 	defer listen.Close()
 
 	for {
@@ -146,6 +185,6 @@ func main() {
 			fmt.Println("Error accepting connect: ", err)
 			return
 		}
-		go process(conn, decodePassword, encodePassword)
+		go process(conn, decodePassword, encodePassword, vpsAddress+":"+vpsPort)
 	}
 }
